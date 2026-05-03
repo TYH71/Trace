@@ -1,6 +1,6 @@
 # 🎥 Trace — Agentic CCTV Indexing Engine
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/DH5p8kukPSo?si=IS5xeXDqjc6Sm-bW" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![Watch Demo](https://img.youtube.com/vi/DH5p8kukPSo/maxresdefault.jpg)](https://www.youtube.com/watch?v=DH5p8kukPSo)
 
 An intelligent video search platform built with Replit Agent during **Ship it Hacks 2026**. Upload surveillance footage, let AI automatically index every frame, then search for anything using natural language.
 
