@@ -1,0 +1,440 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: CCTV Footage Search API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: videos
+    description: Video management
+  - name: frames
+    description: Frame management
+  - name: search
+    description: Natural language search
+  - name: storage
+    description: Object storage operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List all videos
+      responses:
+        "200":
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Video"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Create a video record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVideoBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+
+  /videos/stats:
+    get:
+      operationId: getVideoStats
+      tags: [videos]
+      summary: Get video statistics
+      responses:
+        "200":
+          description: Stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VideoStats"
+
+  /videos/{id}:
+    get:
+      operationId: getVideo
+      tags: [videos]
+      summary: Get a video by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteVideo
+      tags: [videos]
+      summary: Delete a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /videos/{id}/index:
+    post:
+      operationId: indexVideo
+      tags: [videos]
+      summary: Trigger video indexing (frame extraction + AI analysis)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Indexing started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexJobStatus"
+        "404":
+          description: Not found
+
+  /videos/{id}/index-status:
+    get:
+      operationId: getIndexStatus
+      tags: [videos]
+      summary: Get indexing status for a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Index status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IndexJobStatus"
+        "404":
+          description: Not found
+
+  /videos/{id}/frames:
+    get:
+      operationId: listFrames
+      tags: [frames]
+      summary: List all frames for a video
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of frames
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Frame"
+
+  /search:
+    post:
+      operationId: searchFrames
+      tags: [search]
+      summary: Search frames using natural language
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SearchBody"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+
+  /search/history:
+    get:
+      operationId: getSearchHistory
+      tags: [search]
+      summary: Get recent search queries
+      responses:
+        "200":
+          description: Recent searches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SearchHistoryItem"
+
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request a presigned upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RequestUploadUrlBody"
+      responses:
+        "200":
+          description: Presigned URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestUploadUrlResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        objectPath:
+          type: string
+        thumbnailObjectPath:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, indexing, indexed, failed]
+        totalFrames:
+          type: ["integer", "null"]
+        indexedFrames:
+          type: ["integer", "null"]
+        durationSeconds:
+          type: ["number", "null"]
+        errorMessage:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - name
+        - objectPath
+        - thumbnailObjectPath
+        - status
+        - totalFrames
+        - indexedFrames
+        - durationSeconds
+        - errorMessage
+        - createdAt
+        - updatedAt
+
+    CreateVideoBody:
+      type: object
+      properties:
+        name:
+          type: string
+        objectPath:
+          type: string
+        durationSeconds:
+          type: ["number", "null"]
+      required:
+        - name
+        - objectPath
+
+    VideoStats:
+      type: object
+      properties:
+        totalVideos:
+          type: integer
+        indexedVideos:
+          type: integer
+        pendingVideos:
+          type: integer
+        totalFrames:
+          type: integer
+      required:
+        - totalVideos
+        - indexedVideos
+        - pendingVideos
+        - totalFrames
+
+    IndexJobStatus:
+      type: object
+      properties:
+        videoId:
+          type: integer
+        status:
+          type: string
+          enum: [pending, indexing, indexed, failed]
+        totalFrames:
+          type: ["integer", "null"]
+        indexedFrames:
+          type: ["integer", "null"]
+        errorMessage:
+          type: ["string", "null"]
+      required:
+        - videoId
+        - status
+        - totalFrames
+        - indexedFrames
+        - errorMessage
+
+    Frame:
+      type: object
+      properties:
+        id:
+          type: integer
+        videoId:
+          type: integer
+        timestampSeconds:
+          type: number
+        objectPath:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - videoId
+        - timestampSeconds
+        - objectPath
+        - description
+        - createdAt
+
+    SearchBody:
+      type: object
+      properties:
+        query:
+          type: string
+        videoId:
+          type: ["integer", "null"]
+        limit:
+          type: ["integer", "null"]
+      required:
+        - query
+
+    SearchResult:
+      type: object
+      properties:
+        frame:
+          $ref: "#/components/schemas/Frame"
+        video:
+          $ref: "#/components/schemas/Video"
+        relevanceScore:
+          type: number
+        matchReason:
+          type: string
+      required:
+        - frame
+        - video
+        - relevanceScore
+        - matchReason
+
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/SearchResult"
+        totalMatches:
+          type: integer
+      required:
+        - query
+        - results
+        - totalMatches
+
+    SearchHistoryItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        query:
+          type: string
+        resultCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - query
+        - resultCount
+        - createdAt
+
+    RequestUploadUrlBody:
+      type: object
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+      required:
+        - name
+        - size
+        - contentType
+
+    RequestUploadUrlResponse:
+      type: object
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+      required:
+        - uploadURL
+        - objectPath
